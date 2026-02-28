@@ -1,0 +1,49 @@
+services:
+  frontend:
+    build: ./frontend
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/usr/src/app
+    command: sh -c 'npm install && npm run dev'
+    ports:
+      - '3000:3000'
+    tty: true
+  backend:
+    build: ./backend
+    tty: true
+    volumes:
+        - ./backend:/var/www/laravel
+    ports:
+      - '8000:8000'
+    env_file:
+      - ./backend/.env
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Tokyo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+  nginx:
+    build:
+      context: ./nginx/
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    tty: true
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+volumes:
+  postgres_data: {}
